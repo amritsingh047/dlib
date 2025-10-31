@@ -1,0 +1,101 @@
+Is there a significant difference in the average purchase amount between the different shopping seasons (Spring, Summer, Fall, and Winter)?"
+# 1. Import necessary libraries
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Set visualization style and parameters
+sns.set_style('whitegrid')
+plt.rcParams['figure.figsize'] = (12, 6)
+
+# --- 2. Data Loading ---
+# NOTE: Replace 'Shopping_Behavior_Dataset.csv' with your actual file name.
+try:
+    df = pd.read_csv('Shopping_Behavior_Dataset.csv')
+    print("Data successfully loaded!")
+except FileNotFoundError:
+    print("Error: Make sure 'Shopping_Behavior_Dataset.csv' is in the correct directory.")
+    exit()
+
+# Initial Data Exploration
+print("\n--- Initial Data Info ---")
+print(df.head())
+print(df.info())
+
+
+# --- 3. Data Cleaning and Preprocessing ---
+
+# 3.1. Standardize column names (if necessary, though we assume typical names for now)
+# Example: df.columns = df.columns.str.replace(' ', '_')
+
+# 3.2. Handle Missing Values
+# Fill any missing categorical data with 'Unknown' (adjust columns as needed)
+categorical_cols = ['Gender', 'Category', 'Location', 'Payment Method']
+for col in categorical_cols:
+    if col in df.columns:
+        df[col] = df[col].fillna('Unknown')
+
+# 3.3. Create Age Groups (Feature Engineering for better demographic analysis)
+bins = [18, 25, 35, 45, 55, 65, 100]
+labels = ['18-24', '25-34', '35-44', '45-54', '55-64', '65+']
+if 'Age' in df.columns:
+    df['Age_Group'] = pd.cut(df['Age'], bins=bins, labels=labels, right=False)
+
+
+# --- 4. Exploratory Data Analysis (EDA) & Insights ---
+
+# 4.1. Average Purchase Amount by Gender
+if 'Gender' in df.columns and 'Purchase Amount (USD)' in df.columns:
+    avg_purchase_gender = df.groupby('Gender')['Purchase Amount (USD)'].mean().sort_values(ascending=False)
+    print("\n--- 4.1 Average Purchase Amount by Gender ---")
+    print(avg_purchase_gender)
+
+    plt.figure(figsize=(8, 6))
+    sns.barplot(x=avg_purchase_gender.index, y=avg_purchase_gender.values, palette='Blues_d')
+    plt.title('Average Purchase Amount by Gender')
+    plt.ylabel('Average Purchase Amount (USD)')
+    plt.xlabel('Gender')
+    plt.show()
+
+# 4.2. Top 10 Product Categories by Total Sales
+if 'Category' in df.columns and 'Purchase Amount (USD)' in df.columns:
+    category_sales = df.groupby('Category')['Purchase Amount (USD)'].sum().sort_values(ascending=False).head(10)
+    print("\n--- 4.2 Top 10 Categories by Total Sales ---")
+    print(category_sales)
+
+    plt.figure(figsize=(12, 7))
+    sns.barplot(x=category_sales.index, y=category_sales.values, palette='viridis')
+    plt.title('Top 10 Product Categories by Total Revenue')
+    plt.ylabel('Total Revenue (USD)')
+    plt.xlabel('Product Category')
+    plt.xticks(rotation=45, ha='right')
+    plt.tight_layout()
+    plt.show()
+
+# 4.3. Seasonal Spending Trend
+if 'Season' in df.columns and 'Purchase Amount (USD)' in df.columns:
+    seasonal_spending = df.groupby('Season')['Purchase Amount (USD)'].mean().reindex(['Spring', 'Summer', 'Fall', 'Winter'])
+    print("\n--- 4.3 Average Purchase Amount by Season ---")
+    print(seasonal_spending)
+
+    plt.figure(figsize=(8, 6))
+    sns.barplot(x=seasonal_spending.index, y=seasonal_spending.values, palette='YlGnBu')
+    plt.title('Average Purchase Amount by Season')
+    plt.ylabel('Average Purchase Amount (USD)')
+    plt.xlabel('Season')
+    plt.show()
+
+# 4.4. Discount Analysis
+if 'Discount Applied' in df.columns and 'Purchase Amount (USD)' in df.columns:
+    # Calculate the average purchase amount for transactions with and without a discount
+    discount_analysis = df.groupby('Discount Applied')['Purchase Amount (USD)'].agg(['mean', 'count'])
+    print("\n--- 4.4 Discount Impact on Average Purchase Amount and Count ---")
+    print(discount_analysis)
+
+    # Plotting the count of purchases
+    plt.figure(figsize=(8, 6))
+    sns.countplot(x='Discount Applied', data=df, palette='Reds_d')
+    plt.title('Total Transactions With and Without Discount')
+    plt.ylabel('Number of Transactions')
+    plt.show()
